@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.efuture.assignment.dto.ProductDto;
 import com.efuture.assignment.dto.ProductDtoResponse;
 import com.efuture.assignment.dto.ResponseDTO;
+import com.efuture.assignment.dto.ValidationError;
 import com.efuture.assignment.enums.ActiveStatusEnum;
 import com.efuture.assignment.enums.LoggerMessageEnum;
 import com.efuture.assignment.enums.ResponseEnum;
@@ -23,6 +24,7 @@ import com.efuture.assignment.model.ProductComment;
 import com.efuture.assignment.repository.ProductCategoryRepository;
 import com.efuture.assignment.repository.ProductCommentRepository;
 import com.efuture.assignment.repository.ProductRepository;
+import com.efuture.assignment.util.CheckValidation;
 
 @Service
 public class ProductService {
@@ -125,7 +127,9 @@ public class ProductService {
 		ResponseDTO response = new ResponseDTO();
 		try {
 			
-			if(productDto !=  null) {
+			List<ValidationError> errors = CheckValidation.validateProductDto(productDto);
+			
+			if(errors ==  null || errors.size() == 0) {
 				Product product = new Product();
 				product.setDescription(productDto.getDescription());
 				product.setName(productDto.getName());
@@ -136,6 +140,11 @@ public class ProductService {
 				productRepository.save(product);				
 				response.setCode(ResponseEnum.SUCCESS.getCode());
 				response.setMessage(ResponseEnum.SUCCESS.getMessage());
+				
+			}else {
+				response.setErrors(errors);
+				response.setCode(ResponseEnum.ERROR.getCode());
+		        response.setMessage(ResponseEnum.ERROR.getMessage());
 			}
 			
 		} catch (DataIntegrityViolationException ex) {
@@ -164,22 +173,31 @@ public class ProductService {
 		ResponseDTO response = new ResponseDTO();
 		try {
 			
-			Product product = productRepository.findByProductId(productDto.getProductId());			
-			if(product !=  null) {
-				
-				product.setDescription(productDto.getDescription());
-				product.setName(productDto.getName());
-				product.setPrice(productDto.getPrice());
-				product.setProductCategory(productDto.getCategory());
-				product.setStatus(ActiveStatusEnum.ACTIVE.getCode());
-				
-				productRepository.save(product);				
-				response.setCode(ResponseEnum.SUCCESS.getCode());
-				response.setMessage(ResponseEnum.SUCCESS.getMessage());
-				
+			List<ValidationError> errors = CheckValidation.validateProductDto(productDto);
+			
+			if(errors ==  null || errors.size() == 0) {
+			
+				Product product = productRepository.findByProductId(productDto.getProductId());					
+				if(product !=  null) {
+					
+					product.setDescription(productDto.getDescription());
+					product.setName(productDto.getName());
+					product.setPrice(productDto.getPrice());
+					product.setProductCategory(productDto.getCategory());
+					product.setStatus(ActiveStatusEnum.ACTIVE.getCode());
+					
+					productRepository.save(product);				
+					response.setCode(ResponseEnum.SUCCESS.getCode());
+					response.setMessage(ResponseEnum.SUCCESS.getMessage());
+					
+				}else {
+					response.setCode(ResponseEnum.NOT_FOUND.getCode());
+					response.setMessage(ResponseEnum.NOT_FOUND.getMessage());
+				}
 			}else {
-				response.setCode(ResponseEnum.NOT_FOUND.getCode());
-				response.setMessage(ResponseEnum.NOT_FOUND.getMessage());
+				response.setErrors(errors);
+				response.setCode(ResponseEnum.ERROR.getCode());
+		        response.setMessage(ResponseEnum.ERROR.getMessage());	
 			}
 			
 		} catch (DataIntegrityViolationException ex) {

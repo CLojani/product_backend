@@ -6,6 +6,7 @@ public class ResponseDTO {
 
 	private int code;
 	private String message;
+	private List<ValidationError> errors;
 	private List<ProductDto> products;
 	private List<ProductDtoResponse> productAll;
 	private ProductDto product;
@@ -39,6 +40,12 @@ public class ResponseDTO {
 	}
 	public void setProductAll(List<ProductDtoResponse> productAll) {
 		this.productAll = productAll;
+	}
+	public List<ValidationError> getErrors() {
+		return errors;
+	}
+	public void setErrors(List<ValidationError> errors) {
+		this.errors = errors;
 	} 
 	
 	
