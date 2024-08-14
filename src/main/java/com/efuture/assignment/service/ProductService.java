@@ -43,21 +43,26 @@ public class ProductService {
 			
 			if(products !=  null) {
 	
-				List<ProductDto> productsDto = products.stream().map(p -> {
+				List<ProductDtoResponse> productsDto = products.stream().map(p -> {					
+					ProductDtoResponse dto = new ProductDtoResponse();
 					
-					ProductDto dto = new ProductDto();
-					
+					dto.setProductId(p.getProductId());
 					dto.setName(p.getName());
 					dto.setDescription(p.getName());
 					dto.setPrice(p.getPrice());
 					dto.setCategory(p.getProductCategory());
 					dto.setStatus(p.getStatus());
 					
+					List<ProductComment> comments = productCommentRepository.findByProduct(p);
+					if(comments !=  null) {
+						dto.setComments(comments);
+					}
+										
 					return dto;
 					
 				}).collect(Collectors.toList());
-	
-				response.setProducts(productsDto);
+
+				response.setProductAll(productsDto);
 				response.setCode(ResponseEnum.SUCCESS.getCode());
 				response.setMessage(ResponseEnum.SUCCESS.getMessage());
 				
@@ -83,6 +88,7 @@ public class ProductService {
 				List<ProductDtoResponse> productsDto = products.stream().map(p -> {					
 					ProductDtoResponse dto = new ProductDtoResponse();
 					
+					dto.setProductId(p.getProductId());
 					dto.setName(p.getName());
 					dto.setDescription(p.getName());
 					dto.setPrice(p.getPrice());
@@ -134,11 +140,13 @@ public class ProductService {
 			
 		} catch (DataIntegrityViolationException ex) {
            
-            Throwable cause = ex.getCause();
+			Throwable cause = ex.getCause();
+            while (cause != null && !(cause instanceof SQLException)) {
+                cause = cause.getCause();
+            }
             if (cause instanceof SQLException) {
                 SQLException sqlEx = (SQLException) cause;
                 String errorMessage = SqlExceptionUtil.handleSQLException(sqlEx);
-                System.out.println(errorMessage +"_---"+sqlEx);
                 response.setCode(ResponseEnum.ERROR.getCode());
                 response.setMessage(errorMessage);
             } else {
@@ -174,17 +182,22 @@ public class ProductService {
 				response.setMessage(ResponseEnum.NOT_FOUND.getMessage());
 			}
 			
-		}catch (DataIntegrityViolationException ex) {
-	            if (ex.getCause() instanceof SQLException) {
-	            	
-	                String errorMessage = SqlExceptionUtil.handleSQLException((SQLException) ex.getCause());
-	                response.setCode(ResponseEnum.ERROR.getCode());
-					response.setMessage(errorMessage);
-	            } else {
-	            	
-	            	response.setCode(ResponseEnum.ERROR.getCode());
-					response.setMessage(ex.getMessage());
-	            }
+		} catch (DataIntegrityViolationException ex) {
+	           
+			Throwable cause = ex.getCause();
+            while (cause != null && !(cause instanceof SQLException)) {
+                cause = cause.getCause();
+            }
+            if (cause instanceof SQLException) {
+                SQLException sqlEx = (SQLException) cause;
+                String errorMessage = SqlExceptionUtil.handleSQLException(sqlEx);
+                response.setCode(ResponseEnum.ERROR.getCode());
+                response.setMessage(errorMessage);
+            } else {
+                response.setCode(ResponseEnum.ERROR.getCode());
+                response.setMessage("Data integrity violation: " + ex.getMessage());
+            }
+            
 		} catch (Exception e) {
 			
 			response.setCode(ResponseEnum.ERROR.getCode());
